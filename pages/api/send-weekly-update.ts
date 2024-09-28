@@ -2,22 +2,37 @@ import { createClient } from '@supabase/supabase-js'
 import TelegramBot from 'node-telegram-bot-api'
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 
-const supabase = createClient(
+// Define types for your data
+type DayOffRequest = {
+  id: number;
+  username: string;
+  date: string;
+  // Add other fields as necessary
+}
+
+// Define the database type
+type Database = {
+  day_off_requests: DayOffRequest;
+  // Add other tables if necessary
+}
+
+// Initialize Supabase client
+const supabase = createClient<Database>(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 )
 
+// Initialize Telegram bot
 const bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN!, { polling: false })
 
 async function sendDayOffRequests() {
   try {
     console.log('Fetching day off requests from Supabase...')
 
-    const tableName = 'day_off_requests' // Make sure this matches your actual table name
-    const today = new Date().toISOString().split('T')[0] // Get today's date in YYYY-MM-DD format
+    const today = new Date().toISOString().split('T')[0]
 
     const { data, error } = await supabase
-      .from(tableName)
+      .from('day_off_requests')
       .select('*')
       .gte('date', today)
       .order('date', { ascending: true })
@@ -49,18 +64,40 @@ async function sendDayOffRequests() {
   } catch (error) {
     console.error('Error fetching and sending day off requests:', error)
     let errorMessage = 'Error occurred while fetching day off requests. '
-    if (error.code === '42P01') {
-      errorMessage += 'The specified table does not exist. Please check your table name and Supabase configuration.'
-    } else if (error.code === '42501') {
-      errorMessage += 'Permission denied. Please check your Supabase API key and table permissions.'
+    
+    if (error instanceof Error) {
+      if ('code' in error) {
+        switch (error.code) {
+          case '42P01':
+            errorMessage += 'The specified table does not exist. Please check your table name and Supabase configuration.'
+            break
+          case '42501':
+            errorMessage += 'Permission denied. Please check your Supabase API key and table permissions.'
+            break
+          default:
+            errorMessage += `Unexpected error occurred: ${error.message}`
+        }
+      } else {
+        errorMessage += error.message
+      }
     } else {
-      errorMessage += `Error details: ${error.message}`
+      errorMessage += 'An unknown error occurred.'
     }
+    
     await bot.sendMessage(process.env.TELEGRAM_CHAT_ID!, errorMessage)
   }
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  await sendDayOffRequests()
-  res.status(200).json({ message: 'Day off requests sent successfully' })
+  if (req.method !== 'POST') {
+    return res.status(405).json({ message: 'Method not allowed' })
+  }
+
+  try {
+    await sendDayOffRequests()
+    res.status(200).json({ message: 'Day off requests sent successfully' })
+  } catch (error) {
+    console.error('Error in API handler:', error)
+    res.status(500).json({ message: 'Internal server error' })
+  }
 }
