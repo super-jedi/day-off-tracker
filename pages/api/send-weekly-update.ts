@@ -6,7 +6,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
 type DayOffRequest = {
   id: number;
   username: string;
-  date: string;
+  day_of_week: string;
   // Add other fields as necessary
 }
 
@@ -29,13 +29,10 @@ async function sendDayOffRequests() {
   try {
     console.log('Fetching day off requests from Supabase...')
 
-    const today = new Date().toISOString().split('T')[0]
-
     const { data, error } = await supabase
       .from('day_off_requests')
-      .select('*')
-      .gte('date', today)
-      .order('date', { ascending: true })
+      .select('username, day_of_week')
+      .order('day_of_week', { ascending: true })
 
     if (error) {
       console.error('Supabase error:', error)
@@ -43,14 +40,14 @@ async function sendDayOffRequests() {
     }
 
     if (!data || data.length === 0) {
-      await bot.sendMessage(process.env.TELEGRAM_CHAT_ID!, 'No day off requests found starting from today.')
+      await bot.sendMessage(process.env.TELEGRAM_CHAT_ID!, 'No day off requests found.')
       return
     }
 
-    let message = `Day off requests starting from ${today}:\n\n`
+    let message = 'Current day off requests:\n\n'
 
     data.forEach((request) => {
-      message += `${request.username} will be off work on ${request.date}\n`
+      message += `${request.username} will be off work on ${request.day_of_week}\n`
     })
 
     // Split message if it's too long for a single Telegram message
@@ -89,6 +86,12 @@ async function sendDayOffRequests() {
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  if (req.method === 'GET') {
+    // This allows you to test the function via a browser or curl
+    res.status(200).json({ message: 'Send weekly update function is ready.' })
+    return
+  }
+
   if (req.method !== 'POST') {
     return res.status(405).json({ message: 'Method not allowed' })
   }
