@@ -6,16 +6,18 @@ import { useRouter } from 'next/navigation'
 
 export default function Home() {
   const [username, setUsername] = useState('')
-  const [date, setDate] = useState('')
+  const [dayOfWeek, setDayOfWeek] = useState('')
   const [message, setMessage] = useState('')
   const router = useRouter()
   const supabase = createClientComponentClient()
+
+  const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     const { error } = await supabase
       .from('day_off_requests')
-      .insert({ username, date })
+      .insert({ username, day_of_week: dayOfWeek })
     
     if (error) {
       console.error('Supabase error:', error)
@@ -23,7 +25,7 @@ export default function Home() {
     } else {
       setMessage('Request submitted successfully')
       setUsername('')
-      setDate('')
+      setDayOfWeek('')
     }
     router.refresh()
   }
@@ -31,10 +33,10 @@ export default function Home() {
   return (
     <div className="h-full bg-gray-100 flex items-center justify-center">
       <div className="bg-white p-8 rounded-lg shadow-md w-96">
-        <h1 className="text-2xl font-bold mb-6 text-center text-black">Cracked Devs <br></br>Employee Day Off Request</h1>
+        <h1 className="text-2xl font-bold mb-6 text-center text-black">Cracked Devs <br />Employee Day Off Request</h1>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="username" className="block text-sm font-medium text-black ">Telegram Username</label>
+            <label htmlFor="username" className="block text-sm font-medium text-black">Telegram Username</label>
             <input
               type="text"
               id="username"
@@ -45,15 +47,21 @@ export default function Home() {
             />
           </div>
           <div>
-            <label htmlFor="date" className="block text-sm font-medium text-gray-700">Date</label>
-            <input
-              type="date"
-              id="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
+            <label htmlFor="dayOfWeek" className="block text-sm font-medium text-gray-700">Day of Week</label>
+            <select
+              id="dayOfWeek"
+              value={dayOfWeek}
+              onChange={(e) => setDayOfWeek(e.target.value)}
               required
-              className="mt-1 block w-full rounded-md border-gray-700 border-solid border p-3 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-            />
+              className="mt-1 block w-full rounded-md border-gray-700 border-solid border p-3 bg-white text-gray-700"
+            >
+              <option value="">Select a day</option>
+              {daysOfWeek.map((day) => (
+                <option key={day} value={day}>
+                  {day}
+                </option>
+              ))}
+            </select>
           </div>
           <button
             type="submit"
