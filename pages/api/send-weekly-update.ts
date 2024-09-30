@@ -7,6 +7,7 @@ type DayOffRequest = {
   id: number;
   username: string;
   day_of_week: string;
+  created_at: string;
   // Add other fields as necessary
 }
 
@@ -29,9 +30,14 @@ async function sendDayOffRequests() {
   try {
     console.log('Fetching day off requests from Supabase...')
 
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    const sevenDaysAgoISO = sevenDaysAgo.toISOString();
+
     const { data, error } = await supabase
       .from('day_off_requests')
-      .select('username, day_of_week')
+      .select('username, day_of_week, created_at')
+      .gte('created_at', sevenDaysAgoISO)
       .order('day_of_week', { ascending: true })
 
     if (error) {
@@ -40,13 +46,18 @@ async function sendDayOffRequests() {
     }
 
     if (!data || data.length === 0) {
-      await bot.sendMessage(process.env.TELEGRAM_CHAT_ID!, 'No day off requests found.')
+      await bot.sendMessage(process.env.TELEGRAM_CHAT_ID!, 'No day off requests for this week.')
       return
     }
 
-    let message = 'Current day off requests:\n\n'
+    let message = 'Day off requests for this week:\n\n'
 
     data.forEach((request) => {
+      const requestDate = new Date(request.created_at).toLocaleDateString('en-US', { 
+        year: 'numeric', 
+        month: 'short', 
+        day: 'numeric' 
+      });
       message += `${request.username} will be off work on ${request.day_of_week}\n`
     })
 
