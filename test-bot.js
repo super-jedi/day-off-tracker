@@ -22,13 +22,11 @@ async function sendDayOffRequests() {
     console.log('Fetching day off requests from Supabase...')
 
     const tableName = 'day_off_requests' // Make sure this matches your actual table name
-    const today = new Date().toISOString().split('T')[0] // Get today's date in YYYY-MM-DD format
 
     const { data, error } = await supabase
       .from(tableName)
-      .select('*')
-      .gte('date', today)
-      .order('date', { ascending: true })
+      .select('username, day_of_week')
+      .order('day_of_week', { ascending: true })
 
     if (error) {
       console.error('Supabase error:', error)
@@ -36,14 +34,14 @@ async function sendDayOffRequests() {
     }
 
     if (!data || data.length === 0) {
-      await bot.sendMessage(process.env.TELEGRAM_CHAT_ID, 'No day off requests found starting from today.')
+      await bot.sendMessage(process.env.TELEGRAM_CHAT_ID, 'No day off requests found.')
       return
     }
 
-    let message = `Day off requests starting from ${today}:\n\n`
+    let message = 'Current day off requests:\n\n'
 
     data.forEach((request) => {
-      message += `${request.username} will be off work on ${request.date}\n`
+      message += `${request.username} will be off work on ${request.day_of_week}\n`
     })
 
     // Split message if it's too long for a single Telegram message
