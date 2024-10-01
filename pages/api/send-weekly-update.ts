@@ -8,7 +8,6 @@ type DayOffRequest = {
   username: string;
   day_of_week: string;
   created_at: string;
-  
 }
 
 // Define the database type
@@ -46,7 +45,7 @@ async function sendDayOffRequests() {
     }
 
     if (!data || data.length === 0) {
-      await bot.sendMessage(process.env.TELEGRAM_CHAT_ID!, 'No day off requests for this week.')
+      await sendTelegramMessage('No day off requests for this week.')
       return
     }
 
@@ -61,13 +60,7 @@ async function sendDayOffRequests() {
       message += `${request.username} will be off work on ${request.day_of_week}\n`
     })
 
-    // Split message if it's too long for a single Telegram message
-    const maxLength = 4096
-    for (let i = 0; i < message.length; i += maxLength) {
-      const chunk = message.slice(i, i + maxLength)
-      await bot.sendMessage(process.env.TELEGRAM_CHAT_ID!, chunk)
-    }
-
+    await sendTelegramMessage(message)
 
     console.log('Day off requests sent successfully')
   } catch (error) {
@@ -93,7 +86,23 @@ async function sendDayOffRequests() {
       errorMessage += 'An unknown error occurred.'
     }
     
-    await bot.sendMessage(process.env.TELEGRAM_CHAT_ID!, errorMessage)
+    await sendTelegramMessage(errorMessage)
+  }
+}
+
+async function sendTelegramMessage(message: string) {
+  const chatId = process.env.TELEGRAM_CHAT_ID!
+  const topic = process.env.TELEGRAM_TOPIC_ID // New environment variable for the topic
+
+  // Split message if it's too long for a single Telegram message
+  const maxLength = 4096
+  for (let i = 0; i < message.length; i += maxLength) {
+    const chunk = message.slice(i, i + maxLength)
+    if (topic) {
+      await bot.sendMessage(chatId, chunk, { message_thread_id: parseInt(topic) })
+    } else {
+      await bot.sendMessage(chatId, chunk)
+    }
   }
 }
 
