@@ -8,7 +8,7 @@ type DayOffRequest = {
   username: string;
   day_of_week: string;
   created_at: string;
-  // Add other fields as necessary
+  
 }
 
 // Define the database type
@@ -67,6 +67,7 @@ async function sendDayOffRequests() {
       const chunk = message.slice(i, i + maxLength)
       await bot.sendMessage(process.env.TELEGRAM_CHAT_ID!, chunk)
     }
+
 
     console.log('Day off requests sent successfully')
   } catch (error) {
