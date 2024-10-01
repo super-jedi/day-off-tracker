@@ -13,7 +13,7 @@ type DayOffRequest = {
 // Define the database type
 type Database = {
   day_off_requests: DayOffRequest;
-  // Add other tables if necessary
+  
 }
 
 // Initialize Supabase client
