@@ -13,7 +13,6 @@ type DayOffRequest = {
 // Define the database type
 type Database = {
   day_off_requests: DayOffRequest;
-  
 }
 
 // Initialize Supabase client
@@ -37,7 +36,7 @@ async function sendDayOffRequests() {
       .from('day_off_requests')
       .select('username, day_of_week, created_at')
       .gte('created_at', sevenDaysAgoISO)
-      .order('day_of_week', { ascending: true })
+      .order('username', { ascending: true })
 
     if (error) {
       console.error('Supabase error:', error)
@@ -50,14 +49,23 @@ async function sendDayOffRequests() {
     }
 
     let message = 'Day off requests for this week:\n\n'
+    let currentUsername = ''
+    let currentDays: string[] = []
 
-    data.forEach((request) => {
-      const requestDate = new Date(request.created_at).toLocaleDateString('en-US', { 
-        year: 'numeric', 
-        month: 'short', 
-        day: 'numeric' 
-      });
-      message += `${request.username} will be off work on ${request.day_of_week}\n`
+    data.forEach((request, index) => {
+      if (request.username !== currentUsername) {
+        if (currentUsername) {
+          message += `${currentUsername}- ${currentDays.join(', ')}\n`
+        }
+        currentUsername = request.username
+        currentDays = [request.day_of_week]
+      } else {
+        currentDays.push(request.day_of_week)
+      }
+
+      if (index === data.length - 1) {
+        message += `${currentUsername}- ${currentDays.join(', ')}\n`
+      }
     })
 
     await sendTelegramMessage(message)
