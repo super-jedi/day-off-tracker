@@ -50,21 +50,21 @@ async function sendDayOffRequests() {
 
     let message = 'Day off requests for this week:\n\n'
     let currentUsername = ''
-    let currentDays: string[] = []
+    let currentDays = new Set<string>()
 
     data.forEach((request, index) => {
       if (request.username !== currentUsername) {
         if (currentUsername) {
-          message += `${currentUsername}- ${currentDays.join(', ')}\n`
+          message += `${currentUsername}- ${Array.from(currentDays).join(', ')}\n`
         }
         currentUsername = request.username
-        currentDays = [request.day_of_week]
+        currentDays = new Set([request.day_of_week])
       } else {
-        currentDays.push(request.day_of_week)
+        currentDays.add(request.day_of_week)
       }
 
       if (index === data.length - 1) {
-        message += `${currentUsername}- ${currentDays.join(', ')}\n`
+        message += `${currentUsername}- ${Array.from(currentDays).join(', ')}\n`
       }
     })
 
