@@ -99,7 +99,7 @@ async function sendDayOffRequests() {
 }
 
 async function sendReminderMessage() {
-  const reminderMessage = `Schedule your day off for the next week
+  const reminderMessage = `🚨🚨🚨 Schedule your day off for the next week
 
 Make sure you book it before the week starts on Monday, otherwise it will be denied.
 
