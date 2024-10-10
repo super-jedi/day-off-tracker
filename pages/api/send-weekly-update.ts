@@ -98,6 +98,17 @@ async function sendDayOffRequests() {
   }
 }
 
+async function sendReminderMessage() {
+  const reminderMessage = `Schedule your day off for the next week
+
+Make sure you book it before the week starts on Monday, otherwise it will be denied.
+
+Book here: day-off-tracker.vercel.app`
+
+  await sendTelegramMessage(reminderMessage)
+  console.log('Reminder message sent successfully')
+}
+
 async function sendTelegramMessage(message: string) {
   const chatId = process.env.TELEGRAM_CHAT_ID!
   const topic = process.env.TELEGRAM_TOPIC_ID // New environment variable for the topic
@@ -126,8 +137,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    await sendDayOffRequests()
-    res.status(200).json({ message: 'Day off requests sent successfully' })
+    const { messageType } = req.query
+
+    if (messageType === 'reminder') {
+      await sendReminderMessage()
+      res.status(200).json({ message: 'Reminder message sent successfully' })
+    } else if (messageType === 'dayoff' || !messageType) {
+      await sendDayOffRequests()
+      res.status(200).json({ message: 'Day off requests sent successfully' })
+    } else {
+      res.status(400).json({ message: 'Invalid messageType parameter' })
+    }
   } catch (error) {
     console.error('Error in API handler:', error)
     res.status(500).json({ message: 'Internal server error' })
